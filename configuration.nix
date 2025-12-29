@@ -1,4 +1,3 @@
-
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
@@ -6,19 +5,29 @@
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
+
+  # Storage optimization
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "-d";
+  };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-  
-  # nix experimental
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  # nix experimental
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Bootloader.
+  # UEFI system, EFI partition mounted at /boot
   boot.loader.systemd-boot.enable = false;
   boot.loader = {
     efi = {
@@ -37,9 +46,12 @@
 
   networking.hostName = "yuanjiao"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  
+
   # nvidia drivers
-  services.xserver.videoDrivers = [ "amdgpu" "nvidia" ];
+  services.xserver.videoDrivers = [
+    "amdgpu"
+    "nvidia"
+  ];
   hardware.graphics.enable = true;
   hardware.nvidia = {
     modesetting.enable = true;
@@ -53,8 +65,8 @@
       nvidiaBusId = "PCI:1:0:0"; # dedicated
       amdgpuBusId = "PCI:6:0:0"; # integrated
       offload = {
-	enable = true;
-	enableOffloadCmd = true;
+        enable = true;
+        enableOffloadCmd = true;
       };
     };
     package = config.boot.kernelPackages.nvidiaPackages.stable;
@@ -99,7 +111,7 @@
   };
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
+  # services.printing.enable = true;
 
   # Enable sound with pipewire.
   services.pulseaudio.enable = false;
@@ -118,15 +130,16 @@
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
+  services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.aisak = {
     isNormalUser = true;
     description = "aisak";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-    #  thunderbird
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "podman"
     ];
   };
 
@@ -139,30 +152,72 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
-  emacs
-  git
-  curl
-  wget
-  htop
-  pciutils
-  vulkan-tools
+    # System utilities
+    emacs
+    git
+    curl
+    wget
+    htop
+    pciutils
+    vulkan-tools
+    # Media
+    obs-studio
+    vlc
+    fooyin
+    ffmpeg_7
+    # Adminpkgs
+    ansible
+    podman
+    podman-compose
+    tree
+    jq
+    # Desktop apps
+    telegram-desktop
+    mullvad-browser
+    # Dev
+    jetbrains.idea-oss
+    jdk
   ];
+  documentation.nixos.enable = false;
+
+  fonts.packages = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk-sans
+    proggyfonts
+    dm-mono
+    source-code-pro
+  ];
+
+  i18n.inputMethod = {
+    type = "fcitx5";
+    enable = true;
+    fcitx5.addons = with pkgs; [
+      fcitx5-gtk
+      kdePackages.fcitx5-chinese-addons
+      #fcitx5-nord
+    ];
+  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
+  };
 
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
+  services.openssh.enable = true;
+  virtualisation = {
+    containers.enable = true;
+    podman = {
+      enable = true;
+      dockerCompat = true;
+      defaultNetwork.settings.dns_enabled = true;
+    };
+  };
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
